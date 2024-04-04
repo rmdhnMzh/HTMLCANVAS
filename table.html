@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Datagrid with Konva.js Example</title>
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+    <script src="https://unpkg.com/canvas-datagrid"></script>
+  </head>
+  <body>
+    <!-- Container for Konva stage -->
+    <div id="container"></div>
+
+    <!-- Container for canvas-datagrid -->
+    <div
+      id="datagrid-container"
+      style="position: absolute; top: 50px; left: 50px; display: none"
+    ></div>
+
+    <script>
+      // Dummy data JSON
+      const data = [
+        {
+          col1: "row 1 column 1",
+          col2: "row 1 column 2",
+          col3: "row 1 column 3",
+        },
+        {
+          col1: "row 2 column 1",
+          col2: "row 2 column 2",
+          col3: "row 2 column 3",
+        },
+      ];
+
+      // Create Konva stage
+      const stage = new Konva.Stage({
+        container: "container",
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+
+      // Create Konva layer
+      const layer = new Konva.Layer();
+      stage.add(layer);
+
+      // Create Konva rect to visualize the grid
+      const rect = new Konva.Rect({
+        x: 50,
+        y: 50,
+        width: 400,
+        height: 200,
+        fill: "lightblue",
+        stroke: "black",
+        strokeWidth: 2,
+      });
+      layer.add(rect);
+
+      // Create button to toggle grid visibility
+      const button = new Konva.Text({
+        x: 50,
+        y: 10,
+        text: "Show/Hide Grid",
+        fontSize: 20,
+        fill: "black",
+        draggable: false,
+      });
+      layer.add(button);
+
+      // Listen for clicks on the button to toggle grid visibility
+      button.on("click", function () {
+        const gridContainer = document.getElementById("datagrid-container");
+        gridContainer.style.display =
+          gridContainer.style.display === "none" || !gridContainer.style.display
+            ? "block"
+            : "none";
+        layer.draw();
+      });
+
+      // Draw the layer
+      layer.draw();
+
+      // Create canvasDatagrid
+      const gridElement = document.getElementById("datagrid-container");
+      const grid = canvasDatagrid({
+        parentNode: gridElement,
+        data: data,
+      });
+      gridElement.appendChild(grid);
+    </script>
+  </body>
+</html>

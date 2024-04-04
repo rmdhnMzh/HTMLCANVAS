@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+    <script src="https://unpkg.com/canvas-datagrid"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>canvas</title>
+  </head>
+  <style>
+    body {
+      background-color: darkgray;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      height: 100vh;
+    }
+
+    #canvas {
+      background-color: aliceblue;
+      border: 1px solid black;
+      height: 90vh;
+      width: 80vw;
+      position: relative;
+    }
+
+    textarea::placeholder {
+      color: lightgray; /* Warna placeholder */
+    }
+  </style>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+      kanvas;
+      var stage = new Konva.Stage({
+        container: "canvas",
+        width: window.innerWidth * 0.8,
+        height: window.innerHeight * 0.9,
+      });
+      // lapisan
+      var layer = new Konva.Layer();
+
+      stage.add(layer);
+
+      // // Manipulasi Gambar
+      var imageObj = new Image({});
+      var konvaImage;
+
+      imageObj.onload = function () {
+        konvaImage = new Konva.Image({
+          x: 50,
+          y: 100,
+          image: imageObj,
+          width: 200,
+          height: 200,
+          draggable: true,
+        });
+
+        layer.add(konvaImage);
+        layer.draw();
+
+        var tr = new Konva.Transformer({
+          keepRatio: true,
+        });
+        layer.add(tr);
+        tr.hide();
+
+        var clicked = false;
+
+        konvaImage.on("mouseenter", function () {
+          if (!clicked) {
+            tr.show();
+            tr.nodes([konvaImage]);
+          }
+        });
+
+        konvaImage.on("mouseleave", function () {
+          if (!clicked) {
+            tr.hide();
+            tr.nodes([]);
+          }
+        });
+
+        konvaImage.on("click", function () {
+          clicked = !clicked;
+          if (clicked) {
+            tr.show();
+            tr.nodes([konvaImage]);
+          } else {
+            tr.hide();
+            tr.nodes([]);
+          }
+          layer.draw();
+        });
+
+        stage.on("click", function (e) {
+          if (e.target === stage) {
+            clicked = false;
+            tr.hide();
+            tr.nodes([]);
+            layer.draw();
+          }
+        });
+      };
+      imageObj.src = "go.jpeg";
+
+      // akhir dari manipulasi gambar
+
+      // Manipulasi Text
+      var group = new Konva.Group({
+        draggable: true,
+      });
+
+      var textNode = new Konva.Text({
+        text: "Some text here",
+        x: 50,
+        y: 80,
+        fontSize: 20,
+        width: 200,
+        keepRatio: true,
+      });
+
+      group.add(textNode);
+
+      var rect = new Konva.Rect({
+        stroke: "black",
+        strokeWidth: 1,
+        fillEnabled: false,
+      });
+
+      group.add(rect);
+      updateRect();
+
+      layer.add(group);
+
+      // Fungsi untuk memperbarui posisi dan ukuran rect sesuai dengan textNode
+      function updateRect() {
+        var textPosition = textNode.absolutePosition();
+        var textWidth = textNode.width();
+        var textHeight = textNode.height();
+        var padding = textNode.padding();
+        var rectX = textPosition.x - padding;
+        var rectY = textPosition.y - padding;
+        var rectWidth = textWidth + 2 * padding;
+        var rectHeight = textHeight + 2 * padding;
+
+        rect.position({ x: rectX, y: rectY });
+        rect.size({ width: rectWidth, height: rectHeight });
+        rect.show(); // Menampilkan rect
+      }
+
+      textNode.on("click", function () {
+        // hide text node and transformer:
+        group.hide();
+
+        // create textarea over canvas with absolute position
+        // first we need to find position for textarea
+        // how to find it?
+
+        // at first lets find position of text node relative to the stage:
+        var textPosition = textNode.absolutePosition();
+
+        // so position of textarea will be the sum of positions above:
+        var areaPosition = {
+          x: stage.container().offsetLeft + textPosition.x,
+          y: stage.container().offsetTop + textPosition.y,
+        };
+
+        // create textarea and style it
+        var textarea = document.createElement("textarea");
+        document.body.appendChild(textarea);
+
+        textarea.value = textNode.text();
+        textarea.style.position = "absolute";
+        textarea.style.top = areaPosition.y + "px";
+        textarea.style.left = areaPosition.x + "px";
+        textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
+        textarea.style.height =
+          textNode.height() - textNode.padding() * 2 + 5+ "px";
+        textarea.style.fontSize = textNode.fontSize() + "px";
+        textarea.style.padding = "0px";
+        textarea.style.margin = "0px";
+        textarea.style.overflow = "hidden";
+        textarea.style.background = "none";
+        textarea.style.outline = "none";
+        textarea.style.resize = "none";
+        textarea.style.lineHeight = textNode.lineHeight();
+        textarea.style.fontFamily = textNode.fontFamily();
+        textarea.style.textAlign = textNode.align();
+        textarea.style.color = textNode.fill();
+        rotation = textNode.rotation();
+        var transform = "";
+        if (rotation) {
+          transform += "rotateZ(" + rotation + "deg)";
+        }
+
+        var px = 0;
+        // also we need to slightly move textarea on firefox
+        // because it jumps a bit
+        var isFirefox =
+          navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+        if (isFirefox) {
+          px += 2 + Math.round(textNode.fontSize() / 20);
+        }
+        transform += "translateY(-" + px + "px)";
+
+        textarea.style.transform = transform;
+
+        // reset height
+        textarea.style.height = "auto";
+        // after browsers resized it we can set actual value
+        textarea.style.height = textarea.scrollHeight + 3 + "px";
+
+        textarea.focus();
+
+        function removeTextarea() {
+          textarea.parentNode.removeChild(textarea);
+          window.removeEventListener("click", handleOutsideClick);
+          group.show();
+        }
+
+        function setTextareaWidth(newWidth) {
+          if (!newWidth) {
+            // set width for placeholder
+            newWidth = textNode.placeholder.length * textNode.fontSize();
+          }
+          // some extra fixes on different browsers
+          var isSafari = /^((?!chrome|android).)*safari/i.test(
+            navigator.userAgent
+          );
+          var isFirefox =
+            navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+          if (isSafari || isFirefox) {
+            newWidth = Math.ceil(newWidth);
+          }
+
+          var isEdge =
+            document.documentMode || /Edge/.test(navigator.userAgent);
+          if (isEdge) {
+            newWidth += 1;
+          }
+          textarea.style.width = newWidth + "px";
+        }
+
+        textarea.addEventListener("keydown", function (e) {
+          // hide on enter
+          // but don't hide on shift + enter
+          if (e.keyCode === 13 && !e.shiftKey) {
+            textNode.text(textarea.value);
+            removeTextarea();
+          }
+          // on esc do not set value back to node
+          if (e.keyCode === 27) {
+            removeTextarea();
+          }
+        });
+
+        textarea.addEventListener("keydown", function (e) {
+          scale = textNode.getAbsoluteScale().x;
+          setTextareaWidth(textNode.width() * scale);
+          textarea.style.height = "auto";
+          textarea.style.height =
+            textarea.scrollHeight + textNode.fontSize() + "px";
+        });
+
+        function handleOutsideClick(e) {
+          if (e.target !== textarea) {
+            textNode.text(textarea.value);
+            removeTextarea();
+          }
+        }
+        setTimeout(() => {
+          window.addEventListener("click", handleOutsideClick);
+        });
+      });
+    </script>
+  </body>
+</html>
